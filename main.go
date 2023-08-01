@@ -1,11 +1,11 @@
 package main
 
 import (
-	"minesweeper/game"
 	"os"
 	"path"
 
 	ray "github.com/gen2brain/raylib-go/raylib"
+	"github.com/rzaf/mineSweeper/game"
 )
 
 const (

@@ -1,1 +1,1 @@
-go build -o minesweeper
+go build -v -o minesweeper

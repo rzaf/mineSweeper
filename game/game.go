@@ -2,9 +2,9 @@ package game
 
 import (
 	"fmt"
-	"minesweeper/core"
 
 	ray "github.com/gen2brain/raylib-go/raylib"
+	"github.com/rzaf/mineSweeper/core"
 )
 
 type gameState uint8

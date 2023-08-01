@@ -1,4 +1,4 @@
-module minesweeper
+module github.com/rzaf/mineSweeper
 
 go 1.19
 
