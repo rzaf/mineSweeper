@@ -101,7 +101,7 @@ func Unload() {
 func startGame() {
 	gameBoard.randomize()
 	gs = STATE_RUNNING
-	flagsCount = (boardWidth * boardHeight) / 5
+	// flagsCount = (boardWidth * boardHeight) / 5
 	flagsText.SetText(fmt.Sprint(flagsCount))
 	highlightTile(-1, -1)
 }

@@ -28,12 +28,14 @@ type tile struct {
 type board [][]tile
 
 func (b board) randomize() {
+	flagsCount = 0
 	for i := 0; i < len(b); i++ {
 		for j := 0; j < len(b[i]); j++ {
 			b[i][j].state = Hidden
 			gameBoard[i][j].neighborBombsCount = 0
 			if rand.Intn(100) < bombChance {
 				b[i][j].isBomb = true
+				flagsCount++
 			} else {
 				b[i][j].isBomb = false
 			}
