@@ -9,8 +9,6 @@ import (
 
 type gameState uint8
 
-var gs gameState = STATE_RUNNING
-
 const (
 	STATE_RUNNING gameState = iota
 	STATE_GAMEOVER
@@ -18,9 +16,10 @@ const (
 )
 
 var (
-	boardWidth  int = 20
-	boardHeight int = 15
-	bombChance  int = 20
+	gs          gameState = STATE_RUNNING
+	boardWidth  int       = 20
+	boardHeight int       = 15
+	bombChance  int       = 20
 	flagsCount  int
 
 	gameBoard  board
