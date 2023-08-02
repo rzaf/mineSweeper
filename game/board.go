@@ -138,10 +138,12 @@ func (t *tile) flagTile(i int32, j int32) {
 		}
 		gameBoard[i][j].state = Flagged
 		flagsCount--
+		selectedCount++
 		flagsText.SetText(fmt.Sprint(flagsCount))
 	} else if gameBoard[i][j].state == Flagged {
 		gameBoard[i][j].state = Hidden
 		flagsCount++
+		selectedCount--
 		flagsText.SetText(fmt.Sprint(flagsCount))
 	}
 }
@@ -149,6 +151,7 @@ func (t *tile) flagTile(i int32, j int32) {
 func (t *tile) selectTile(i int32, j int32) {
 	if gameBoard[i][j].state == Hidden {
 		gameBoard[i][j].state = Found
+		selectedCount++
 		if gameBoard[i][j].isBomb {
 			gameOver()
 		} else {

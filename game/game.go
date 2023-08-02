@@ -2,6 +2,8 @@ package game
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
 
 	ray "github.com/gen2brain/raylib-go/raylib"
 	"github.com/rzaf/mineSweeper/core"
@@ -12,15 +14,17 @@ type gameState uint8
 const (
 	STATE_RUNNING gameState = iota
 	STATE_GAMEOVER
+	STATE_WIN
 	STATE_MENU
 )
 
 var (
-	gs          gameState = STATE_RUNNING
-	boardWidth  int       = 20
-	boardHeight int       = 15
-	bombChance  int       = 20
-	flagsCount  int
+	gs            gameState = STATE_RUNNING
+	boardWidth    int       = 20
+	boardHeight   int       = 15
+	bombChance    int       = 20
+	flagsCount    int
+	selectedCount int
 
 	gameBoard  board
 	gameCamera ray.Camera2D
@@ -40,6 +44,10 @@ var (
 	cell7Texture     *core.Texture
 	cell8Texture     *core.Texture
 	flag0Texture     *core.Texture
+	smileFaceTexture *core.Texture
+	clickFaceTexture *core.Texture
+	winFaceTexture   *core.Texture
+	lostFaceTexture  *core.Texture
 	flagsText        *core.Text
 
 	isWindowMaximized                 bool = false
@@ -74,11 +82,20 @@ func Load() {
 	flag0Texture = core.NewTexture("resources/flag0.png", ray.NewRectangle(0, 0, 283, 311))
 	flag0Texture.Dest = ray.NewRectangle(13, 12, 35, 38)
 	flagsText = core.NewText(fmt.Sprint(flagsCount), ray.GetFontDefault(), ray.NewVector2(55, 10), 50, 8, ray.NewColor(255, 0, 0, 255))
+	smileFaceTexture = core.NewTexture("resources/smileface.png", ray.NewRectangle(0, 0, 321, 321))
+	clickFaceTexture = core.NewTexture("resources/clickface.png", ray.NewRectangle(0, 0, 321, 321))
+	winFaceTexture = core.NewTexture("resources/winface.png", ray.NewRectangle(0, 0, 321, 321))
+	lostFaceTexture = core.NewTexture("resources/lostface.png", ray.NewRectangle(0, 0, 321, 321))
+	smileFaceTexture.Dest = ray.NewRectangle(float32(ray.GetScreenWidth())-13-45, 12, 38, 38)
+	clickFaceTexture.Dest = ray.NewRectangle(float32(ray.GetScreenWidth())-13-45, 12, 38, 38)
+	winFaceTexture.Dest = ray.NewRectangle(float32(ray.GetScreenWidth())-13-45, 12, 38, 38)
+	lostFaceTexture.Dest = ray.NewRectangle(float32(ray.GetScreenWidth())-13-45, 12, 38, 38)
 
 	image := ray.LoadImageFromTexture(mineTexture.Texture)
 	ray.SetWindowIcon(*image)
 	ray.UnloadImage(image)
 	startGame()
+	rand.Seed(time.Now().Unix())
 }
 
 func Unload() {
@@ -96,9 +113,15 @@ func Unload() {
 	cell7Texture.Unload()
 	cell8Texture.Unload()
 	flag0Texture.Unload()
+	smileFaceTexture.Unload()
+	clickFaceTexture.Unload()
+	winFaceTexture.Unload()
+	lostFaceTexture.Unload()
 }
 
 func startGame() {
+	fmt.Println("Starting")
+	selectedCount = 0
 	gameBoard.randomize()
 	gs = STATE_RUNNING
 	// flagsCount = (boardWidth * boardHeight) / 5
@@ -122,6 +145,11 @@ func fitCamera() {
 
 func UpdateGame() {
 	if ray.IsWindowResized() {
+		faceNewDest := ray.NewRectangle(float32(ray.GetScreenWidth())-13-45, 12, 38, 38)
+		smileFaceTexture.Dest = faceNewDest
+		clickFaceTexture.Dest = faceNewDest
+		winFaceTexture.Dest = faceNewDest
+		lostFaceTexture.Dest = faceNewDest
 		fitCamera()
 	}
 	if ray.IsKeyDown(ray.KeyLeftAlt) || ray.IsKeyDown(ray.KeyRightAlt) {
@@ -137,7 +165,9 @@ func UpdateGame() {
 			isWindowMaximized = !isWindowMaximized
 		}
 	}
-
+	if gs == STATE_RUNNING && selectedCount == boardWidth*boardHeight {
+		checkFullBoard()
+	}
 	if ray.IsMouseButtonDown(ray.MouseLeftButton) || ray.IsMouseButtonReleased(ray.MouseLeftButton) {
 		// fmt.Println("mouse position: ", ray.GetMousePosition())
 		// fmt.Println("world position: ", ray.GetScreenToWorld2D(ray.GetMousePosition(), gameCamera))
@@ -154,7 +184,8 @@ func UpdateGame() {
 				highlightTile(-1, -1)
 			}
 		} else {
-			if ray.IsMouseButtonReleased(ray.MouseLeftButton) {
+			if ray.IsMouseButtonReleased(ray.MouseLeftButton) &&
+				ray.CheckCollisionPointRec(ray.GetMousePosition(), smileFaceTexture.Dest) {
 				startGame()
 			}
 		}
@@ -178,9 +209,54 @@ func DrawGame() {
 	gameBoard.draw()
 	flag0Texture.Draw()
 	flagsText.Draw()
+	drawFace()
+}
+
+func drawFace() {
+	switch gs {
+	case STATE_RUNNING:
+		if ray.IsMouseButtonDown(ray.MouseLeftButton) {
+			clickFaceTexture.Draw()
+		} else {
+			smileFaceTexture.Draw()
+		}
+	case STATE_GAMEOVER:
+		if ray.IsMouseButtonDown(ray.MouseLeftButton) && ray.CheckCollisionPointRec(ray.GetMousePosition(), smileFaceTexture.Dest) {
+			smileFaceTexture.Draw()
+		} else {
+			lostFaceTexture.Draw()
+		}
+	case STATE_WIN:
+		if ray.IsMouseButtonDown(ray.MouseLeftButton) && ray.CheckCollisionPointRec(ray.GetMousePosition(), smileFaceTexture.Dest) {
+			smileFaceTexture.Draw()
+		} else {
+			winFaceTexture.Draw()
+		}
+	}
 }
 
 func gameOver() {
 	gs = STATE_GAMEOVER
-	// fmt.Println("Game over")
+	fmt.Println("Game over")
+}
+
+func win() {
+	gs = STATE_WIN
+	fmt.Println("Win")
+}
+
+func checkFullBoard() {
+	for i := 0; i < len(gameBoard); i++ {
+		for j := 0; j < len(gameBoard[i]); j++ {
+			switch gameBoard[i][j].state {
+			case Hidden:
+				panic("bug")
+			case Flagged:
+				if !gameBoard[i][j].isBomb {
+					gameOver()
+				}
+			}
+		}
+	}
+	win()
 }
