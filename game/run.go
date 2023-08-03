@@ -37,11 +37,28 @@ func handleFlags() {
 	}
 }
 
+func findResourceDirectory() {
+	binaryPath, error := os.Executable()
+	if error == nil {
+		binaryPath = path.Dir(binaryPath)
+		if _, error = os.Stat(binaryPath + "/resources"); error == nil {
+			os.Chdir(binaryPath)
+			return
+		}
+	}
+	cmdPath, error := os.Getwd()
+	if error == nil {
+		if _, error = os.Stat(cmdPath + "/resources"); error == nil {
+			os.Chdir(cmdPath)
+			return
+		}
+	}
+	panic("unable to find resources directory !")
+}
+
 func (g *Game) Init() {
 	handleFlags()
-	currentPath, _ := os.Executable()
-	currentPath = path.Dir(currentPath)
-	os.Chdir(currentPath)
+	findResourceDirectory()
 	ray.SetTraceLog(ray.LogError)
 	ray.InitWindow(1000, 600, "Mine Sweeper")
 	ray.SetWindowState(ray.FlagWindowResizable)
